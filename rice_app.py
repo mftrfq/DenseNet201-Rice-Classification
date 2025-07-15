@@ -53,7 +53,7 @@ with st.sidebar:
             model = load_model(model_path)
         st.success(f"{selected_model} selected!")
     except Exception as e:
-        st.error(f"{selected_model} failed to load!")
+        st.error(f"{selected_model} failed to load! Error: {e}")
 
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
