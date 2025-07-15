@@ -4,7 +4,6 @@ from PIL import Image, ImageOps
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-import os
 
 # Hide deprecation warnings
 warnings.filterwarnings("ignore")
@@ -123,7 +122,7 @@ st.write(
     "Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, ekonomi, dan ketahanan pangan banyak negara, terutama di Asia."
 )
 
-# Image prediction
+# Main prediction logic
 if model:
     if img_source == "Sample image":
         st.sidebar.header("Pilih Kelas Sampel")
@@ -172,13 +171,14 @@ if model:
                 st.sidebar.header("🔎 HASIL PREDIKSI")
                 st.sidebar.warning(f"Varietas: {pred_class.upper()}")
                 st.sidebar.info(f"Skor Keyakinan: {confidence:.2f}%")
+
                 st.markdown("### 💡 Informasi Varietas")
                 display_info(pred_class)
                 visualize_predictions(predictions, class_names)
-    
+
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat memproses gambar: {e}")
         else:
             st.info("Silakan unggah gambar untuk melakukan klasifikasi.")
-    else:
-        st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
+else:
+    st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
