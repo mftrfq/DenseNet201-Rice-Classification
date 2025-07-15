@@ -170,4 +170,15 @@ if model:
                 pred_class = class_names[np.argmax(predictions)]
 
                 st.sidebar.header("🔎 HASIL PREDIKSI")
-                st.sidebar.warning(f"Var
+                st.sidebar.warning(f"Varietas: {pred_class.upper()}")
+                st.sidebar.info(f"Skor Keyakinan: {confidence:.2f}%")
+                st.markdown("### 💡 Informasi Varietas")
+                display_info(pred_class)
+                visualize_predictions(predictions, class_names)
+    
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat memproses gambar: {e}")
+        else:
+            st.info("Silakan unggah gambar untuk melakukan klasifikasi.")
+    else:
+    st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
