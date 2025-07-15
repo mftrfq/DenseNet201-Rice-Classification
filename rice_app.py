@@ -24,6 +24,13 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+import os
+st.write("Checking model file at:", model_path)
+if not os.path.exists(model_path):
+    st.error(f"Model file not found at: {model_path}")
+else:
+    st.success("Model file found.")
+
 # Caching model loading
 @st.cache_resource
 def load_model(model_path):
