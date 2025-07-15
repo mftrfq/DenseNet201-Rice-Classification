@@ -7,4 +7,3 @@ rembg
 numpy
 pandas
 matplotlib
-os
