@@ -24,12 +24,11 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Load .tflite model with TFLite Interpreter
-@st.cache_resource
+# Load .h5 model with Keras
+@st.cache(allow_output_mutation=True)
 def load_model(model_path):
-    interpreter = tf.lite.Interpreter(model_path=model_path)
-    interpreter.allocate_tensors()
-    return interpreter
+    model = tf.keras.models.load_model(model_path)
+    return model
 
 # Class labels
 class_names = ['ciherang', 'ir64', 'mentik']
@@ -41,27 +40,21 @@ rice_info = {
     "mentik": "Mentik dikenal dengan aroma wangi dan tekstur sangat pulen. Sering dianggap beras premium.🍚"
 }
 
-# Prediction using TFLite interpreter
-def import_and_predict(image_data, interpreter):
+# Prediction using Keras model
+def import_and_predict(image_data, model):
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
     img = np.asarray(image).astype(np.float32) / 255.0
     input_data = np.expand_dims(img, axis=0)
+    predictions = model.predict(input_data)
+    return predictions
 
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-
-    interpreter.set_tensor(input_details[0]['index'], input_data)
-    interpreter.invoke()
-    output_data = interpreter.get_tensor(output_details[0]['index'])
-    return output_data
-
-# Tampilkan info varietas
+# Display rice variety info
 def display_info(predicted_class):
     st.warning(f"{predicted_class.upper()} VARIETY")
     st.write(rice_info[predicted_class])
 
-# Visualisasi probabilitas prediksi
+# Visualize prediction probabilities
 def visualize_predictions(predictions, class_names):
     plt.figure(figsize=(8, 4))
     plt.bar(class_names, predictions[0], color=['blue', 'orange', 'green'])
