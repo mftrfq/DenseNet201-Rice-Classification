@@ -54,12 +54,12 @@ with st.sidebar:
     else:
         st.success("Model file found.")
         
-    try:
-        with st.spinner(f'Loading {selected_model}...'):
-            model = load_model(model_path)
-        st.success(f"{selected_model} selected!")
-    except Exception as e:
-        st.error(f"{selected_model} failed to load!")
+    # try:
+    #     with st.spinner(f'Loading {selected_model}...'):
+    #         model = load_model(model_path)
+    #     st.success(f"{selected_model} selected!")
+    # except Exception as e:
+    #     st.error(f"{selected_model} failed to load!")
 
     # Image suorce
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
