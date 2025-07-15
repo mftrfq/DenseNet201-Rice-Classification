@@ -91,7 +91,7 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Model": "Models/1model_kompatibel_streamlit.tflite"
+    "Model": "Models/TL_model_30epoch.h5"
 }
 
 # Sidebar
