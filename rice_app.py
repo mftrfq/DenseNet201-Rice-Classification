@@ -4,6 +4,7 @@ from PIL import Image, ImageOps
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+import os
 
 # Hide deprecation warnings
 warnings.filterwarnings("ignore")
