@@ -91,7 +91,7 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Model": "Models/model_compatible_quantized.tflite"
+    "Model": "Models/model_streamlit_compatible.tflite"
 }
 
 # Sidebar
