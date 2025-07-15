@@ -87,8 +87,8 @@ sample_images = {
 model_options = {
     # "Transfer Learning E10": "Models/TL_model_10epoch.keras",
     # "Transfer Learning E20": "Models/TL_model_20epoch.keras",
-    # "Transfer Learning E30": "Models/TL_model_30epoch.keras",
-    "Non-Transfer Learning E10": "Models/nonTL_model_10epoch.keras",
+    "Transfer Learning E30": "Models/TL_model_30epoch.keras",
+    # "Non-Transfer Learning E10": "Models/nonTL_model_10epoch.keras",
     # "Non-Transfer Learning E20": "Models/nonTL_model_20epoch.keras",
     # "Non-Transfer Learning E30": "Models/nonTL_model_30epoch.keras",
 }
