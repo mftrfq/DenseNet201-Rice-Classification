@@ -47,21 +47,14 @@ with st.sidebar:
     }
 
     selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
-    model_path = model_options[selected_model]
-    st.write("Checking model file at:", model_path)
-    if not os.path.exists(model_path):
-        st.error(f"Model file not found at: {model_path}")
-    else:
-        st.success("Model file found.")
-        
-    # try:
-    #     with st.spinner(f'Loading {selected_model}...'):
-    #         model = load_model(model_path)
-    #     st.success(f"{selected_model} selected!")
-    # except Exception as e:
-    #     st.error(f"{selected_model} failed to load!")
+    model_path = model_options[selected_model]      
+    try:
+        with st.spinner(f'Loading {selected_model}...'):
+            model = load_model(model_path)
+        st.success(f"{selected_model} selected!")
+    except Exception as e:
+        st.error(f"{selected_model} failed to load!")
 
-    # Image suorce
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
 # Headline
