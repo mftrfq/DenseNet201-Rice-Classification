@@ -38,13 +38,14 @@ with st.sidebar:
 
     # Dropdown model
     model_options = {
-        "Transfer Learning E10": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/TL_model_10epoch.keras',
-        "Transfer Learning E20": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/TL_model_20epoch.keras',
-        "Transfer Learning E30": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/TL_model_30epoch.keras',
-        "Non-Transfer Learning E10": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/nonTL_model_10epoch.keras',
-        "Non-Transfer Learning E20": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/nonTL_model_20epoch.keras',
-        "Non-Transfer Learning E30": r'D:/#KULIAH/SKRIPSI/Streamlit_App/Model/nonTL_model_30epoch.keras',
+    "Transfer Learning E10": "Model/TL_model_10epoch.keras",
+    "Transfer Learning E20": "Model/TL_model_20epoch.keras",
+    "Transfer Learning E30": "Model/TL_model_30epoch.keras",
+    "Non-Transfer Learning E10": "Model/nonTL_model_10epoch.keras",
+    "Non-Transfer Learning E20": "Model/nonTL_model_20epoch.keras",
+    "Non-Transfer Learning E30": "Model/nonTL_model_30epoch.keras",
     }
+
     selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
     model_path = model_options[selected_model]
 
@@ -108,19 +109,19 @@ def visualize_predictions(predictions, class_names):
 # Image sample
 sample_images = {
     "Ciherang": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_3.png'
+        r'Images/sampel ciherang_1.png',
+        r'Images/sampel ciherang_2.png',
+        r'Images/sampel ciherang_3.png'
     ],
     "IR64": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_3.png'
+        r'Imagessampel ir64_1.png',
+        r'Imagessampel ir64_2.png',
+        r'Imagessampel ir64_3.png'
     ],
     "Mentik": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_3.png'
+        r'Images/sampel mentik_1.png',
+        r'Images/sampel mentik_2.png',
+        r'Images/sampel mentik_3.png'
     ]
 }
 
