@@ -6,3 +6,4 @@ pillow
 rembg
 numpy
 pandas
+matplotlib
