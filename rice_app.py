@@ -24,9 +24,6 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Write status
-st.write("✅ Streamlit page loaded successfully")
-
 # Caching model loading
 @st.cache_resource
 def load_model(model_path):
@@ -87,12 +84,12 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Transfer Learning E10": "Models/TL_model_10epoch.keras",
-    "Transfer Learning E20": "Models/TL_model_20epoch.keras",
-    "Transfer Learning E30": "Models/TL_model_30epoch.keras",
+    # "Transfer Learning E10": "Models/TL_model_10epoch.keras",
+    # "Transfer Learning E20": "Models/TL_model_20epoch.keras",
+    # "Transfer Learning E30": "Models/TL_model_30epoch.keras",
     "Non-Transfer Learning E10": "Models/nonTL_model_10epoch.keras",
-    "Non-Transfer Learning E20": "Models/nonTL_model_20epoch.keras",
-    "Non-Transfer Learning E30": "Models/nonTL_model_30epoch.keras",
+    # "Non-Transfer Learning E20": "Models/nonTL_model_20epoch.keras",
+    # "Non-Transfer Learning E30": "Models/nonTL_model_30epoch.keras",
 }
 
 # Sidebar
