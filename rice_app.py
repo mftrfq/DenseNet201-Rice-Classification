@@ -38,12 +38,12 @@ with st.sidebar:
 
     # Dropdown model
     model_options = {
-        # "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
-        # "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
+        "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
+        "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
         "Transfer Learning E30": r'Models/TL_model_30epoch.keras',
-        # "Non-Transfer Learning E10": r'Models/nonTL_model_10epoch.keras',
-        # "Non-Transfer Learning E20": r'Models/nonTL_model_20epoch.keras',
-        # "Non-Transfer Learning E30": r'Models/nonTL_model_30epoch.keras',
+        "Non-Transfer Learning E10": r'Models/nonTL_model_10epoch.keras',
+        "Non-Transfer Learning E20": r'Models/nonTL_model_20epoch.keras',
+        "Non-Transfer Learning E30": r'Models/nonTL_model_30epoch.keras',
     }
     selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
     model_path = model_options[selected_model]
