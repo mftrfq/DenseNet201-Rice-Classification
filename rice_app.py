@@ -38,12 +38,12 @@ with st.sidebar:
 
     # Dropdown model
     model_options = {
-    "Transfer Learning E10": "Model/TL_model_10epoch.keras",
-    "Transfer Learning E20": "Model/TL_model_20epoch.keras",
-    "Transfer Learning E30": "Model/TL_model_30epoch.keras",
-    "Non-Transfer Learning E10": "Model/nonTL_model_10epoch.keras",
-    "Non-Transfer Learning E20": "Model/nonTL_model_20epoch.keras",
-    "Non-Transfer Learning E30": "Model/nonTL_model_30epoch.keras",
+    "Transfer Learning E10": "Models/TL_model_10epoch.keras",
+    "Transfer Learning E20": "Models/TL_model_20epoch.keras",
+    "Transfer Learning E30": "Models/TL_model_30epoch.keras",
+    "Non-Transfer Learning E10": "Models/nonTL_model_10epoch.keras",
+    "Non-Transfer Learning E20": "Models/nonTL_model_20epoch.keras",
+    "Non-Transfer Learning E30": "Models/nonTL_model_30epoch.keras",
     }
 
     selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
@@ -114,9 +114,9 @@ sample_images = {
         r'Images/sampel ciherang_3.png'
     ],
     "IR64": [
-        r'Imagessampel ir64_1.png',
-        r'Imagessampel ir64_2.png',
-        r'Imagessampel ir64_3.png'
+        r'Images/sampel ir64_1.png',
+        r'Images/sampel ir64_2.png',
+        r'Images/sampel ir64_3.png'
     ],
     "Mentik": [
         r'Images/sampel mentik_1.png',
