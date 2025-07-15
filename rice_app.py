@@ -108,19 +108,19 @@ def visualize_predictions(predictions, class_names):
 # Image sample
 sample_images = {
     "Ciherang": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ciherang_3.png'
+        r'Images/sampel ciherang_1.png',
+        r'Images/sampel ciherang_2.png',
+        r'Images/sampel ciherang_3.png'
     ],
     "IR64": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel ir64_3.png'
+        r'Images/sampel ir64_1.png',
+        r'Images/sampel ir64_2.png',
+        r'Images/sampel ir64_3.png'
     ],
     "Mentik": [
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_1.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_2.png',
-        r'D:/#KULIAH/SKRIPSI/Streamlit_App/Images/sampel mentik_3.png'
+        r'Images/sampel mentik_1.png',
+        r'Images/sampel mentik_2.png',
+        r'Images/sampel mentik_3.png'
     ]
 }
 
