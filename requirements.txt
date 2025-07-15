@@ -1,8 +1,8 @@
+keras==3.9.2
+matplotlib==3.8.0
+numpy==1.26.0
+opencv-python-headless==4.11.0.86
+pandas==2.1.0
+pillow==11.2.1
 streamlit==1.45.1
-tensorflow==2.18.0
-opencv-python-headless
-pillow
-rembg
-numpy
-pandas
-matplotlib
+tensorflow==2.19.0
