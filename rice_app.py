@@ -181,4 +181,4 @@ if model:
         else:
             st.info("Silakan unggah gambar untuk melakukan klasifikasi.")
     else:
-    st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
+        st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
