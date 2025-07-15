@@ -84,7 +84,7 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Model": "Models/TL_model_30epoch.h5"
+    "Model": "Models/TL_model_30epoch.keras"
 }
 
 # Sidebar
