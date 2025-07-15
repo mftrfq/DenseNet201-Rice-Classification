@@ -91,7 +91,7 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Model": "Models/quantized_TL_model_30epoch.tflite"
+    "Model": "Models/model_compatible_quantized.tflite"
 }
 
 # Sidebar
