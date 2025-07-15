@@ -4,6 +4,7 @@ from PIL import Image, ImageOps
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+import os
 
 # Hide deprecation warnings
 warnings.filterwarnings("ignore")
@@ -24,8 +25,8 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Load .h5 model with Keras
-@st.cache(allow_output_mutation=True)
+# Caching model loading
+@st.cache_resource
 def load_model(model_path):
     model = tf.keras.models.load_model(model_path)
     return model
@@ -33,28 +34,28 @@ def load_model(model_path):
 # Class labels
 class_names = ['ciherang', 'ir64', 'mentik']
 
-# Info dictionary
+# Class info
 rice_info = {
     "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia. Beras Ciherang memiliki tekstur pulen dan hasil panen tinggi.🍚",
     "ir64": "IR64 adalah varietas produktif dengan masa panen cepat. Bijinya panjang, ramping, dan cenderung pera.🍚",
     "mentik": "Mentik dikenal dengan aroma wangi dan tekstur sangat pulen. Sering dianggap beras premium.🍚"
 }
 
-# Prediction using Keras model
+# Prediction function
 def import_and_predict(image_data, model):
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
-    img = np.asarray(image).astype(np.float32) / 255.0
-    input_data = np.expand_dims(img, axis=0)
-    predictions = model.predict(input_data)
-    return predictions
+    img = np.asarray(image) / 255.0
+    img_reshape = img[np.newaxis, ...]
+    prediction = model.predict(img_reshape)
+    return prediction
 
-# Display rice variety info
+# Info display function
 def display_info(predicted_class):
     st.warning(f"{predicted_class.upper()} VARIETY")
     st.write(rice_info[predicted_class])
 
-# Visualize prediction probabilities
+# Visualization
 def visualize_predictions(predictions, class_names):
     plt.figure(figsize=(8, 4))
     plt.bar(class_names, predictions[0], color=['blue', 'orange', 'green'])
@@ -84,7 +85,12 @@ sample_images = {
 
 # Model options
 model_options = {
-    "Model": "Models/TL_model_30epoch.keras"
+    # "Transfer Learning E10": "Models/TL_model_10epoch.keras",
+    # "Transfer Learning E20": "Models/TL_model_20epoch.keras",
+    "Transfer Learning E30": "Models/TL_model_30epoch.keras",
+    # "Non-Transfer Learning E10": "Models/nonTL_model_10epoch.keras",
+    # "Non-Transfer Learning E20": "Models/nonTL_model_20epoch.keras",
+    # "Non-Transfer Learning E30": "Models/nonTL_model_30epoch.keras",
 }
 
 # Sidebar
@@ -96,6 +102,7 @@ with st.sidebar:
     selected_model = st.selectbox("Pilih Model Klasifikasi", ["-- Pilih Model --"] + list(model_options.keys()))
     img_source = st.radio("Sumber Gambar", ("Upload image", "Sample image"))
 
+    # Load model jika dipilih
     if selected_model != "-- Pilih Model --":
         model_path = model_options[selected_model]
         try:
@@ -115,7 +122,7 @@ st.write(
     "Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, ekonomi, dan ketahanan pangan banyak negara, terutama di Asia."
 )
 
-# Main prediction logic
+# Image prediction
 if model:
     if img_source == "Sample image":
         st.sidebar.header("Pilih Kelas Sampel")
@@ -168,10 +175,10 @@ if model:
                 st.markdown("### 💡 Informasi Varietas")
                 display_info(pred_class)
                 visualize_predictions(predictions, class_names)
-
             except Exception as e:
-                st.error(f"Terjadi kesalahan saat memproses gambar: {e}")
+                st.error("Terjadi kesalahan saat memproses gambar.")
+                st.error(str(e))
         else:
-            st.info("Silakan unggah gambar untuk melakukan klasifikasi.")
+            st.info("Silakan upload gambar untuk klasifikasi.")
 else:
-    st.warning("Silakan pilih model terlebih dahulu dari sidebar.")
+    st.warning("🔄 Silakan pilih model terlebih dahulu di sidebar untuk melanjutkan.")
