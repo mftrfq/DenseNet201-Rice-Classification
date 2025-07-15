@@ -1,6 +1,6 @@
 streamlit==1.45.1
 tensorflow==2.15.0
-keras==2.18.0
+keras==3.0.5
 opencv-python-headless
 pillow
 rembg
