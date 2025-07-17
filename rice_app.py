@@ -150,24 +150,19 @@ else:
         st.text("Please upload an image file")
     else:
         try:
-            image = Image.open(file).convert('RGB')
-            st.image(image, caption="Uploaded Image", use_container_width=True)
-
-            # Remove background
-            # input_bytes = file.read()
-            # output_bytes = remove(input_bytes)
-            # img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
-            # img_np = np.array(img_no_bg)
-            # Baca file sekali ke dalam memory
+            # Step 1: read file into memory buffer
             file_bytes = file.read()
-            image = Image.open(BytesIO(file_bytes)).convert('RGB')  # untuk ditampilkan ke user
+            image_buffer = BytesIO(file_bytes)
+    
+            # Step 2: display original image
+            image = Image.open(image_buffer).convert('RGB')
             st.image(image, caption="Uploaded Image", use_container_width=True)
-            
-            # Remove background menggunakan salinan
-            output_bytes = remove(file_bytes)
+    
+            # Step 3: remove background from fresh copy
+            rembg_buffer = BytesIO(file_bytes)  # separate buffer
+            output_bytes = remove(rembg_buffer.read())
             img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
             img_np = np.array(img_no_bg)
-
 
             # Convert to grayscale
             gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
