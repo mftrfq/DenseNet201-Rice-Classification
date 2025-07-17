@@ -4,8 +4,11 @@ from PIL import Image, ImageOps
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+import cv2
+from rembg import remove
+from io import BytesIO
+from collections import Counter
 
-# Hide deprecation warnings
 warnings.filterwarnings("ignore")
 
 # Set page config
@@ -24,19 +27,18 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Caching model loading
+# Load model
 @st.cache_resource
 def load_model(model_path):
     model = tf.keras.models.load_model(model_path)
     return model
 
-# Sidebar content
+# Sidebar
 with st.sidebar:
     st.title("RICE VARIETY CLASSIFICATION")
     st.subheader("DenseNet-201")
     st.text("Accurate Rice Variety Classifier. It helps users to easily classify rice based on images.")
 
-    # Dropdown model
     model_options = {
         "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
         "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
@@ -55,57 +57,47 @@ with st.sidebar:
     except Exception as e:
         st.error(f"{selected_model} failed to load!")
 
-    # Image suorce
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
 # Headline
 st.header("🌾RICE VARIETY CLASSIFICATION")
-st.write("Tahukah anda? biji padi yang kita kenal sebagai beras merupakan sumber karbohidrat utama bagi sebagian besar penduduk dunia. " \
-"Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, " \
-"ekonomi, dan ketahanan pangan banyak negara, terutama di Asia.")
+st.write(
+    "Tahukah anda? biji padi yang kita kenal sebagai beras merupakan sumber karbohidrat utama bagi sebagian besar penduduk dunia. "
+    "Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, "
+    "ekonomi, dan ketahanan pangan banyak negara, terutama di Asia."
+)
 
-# Class name
+# Classes and Info
 class_names = ['ciherang', 'ir64', 'mentik']
-
-# Varietu info
 rice_info = {
     "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia. "
                 "Varietas ini dikenal karena hasil panennya yang tinggi dan daya adaptasinya yang baik "
-                "terhadap berbagai kondisi lingkungan. Beras Ciherang memiliki tekstur pulen yang disukai "
-                "banyak masyarakat, serta aroma yang tidak terlalu kuat, menjadikannya pilihan populer untuk konsumsi sehari-hari.🍚",
+                "terhadap berbagai kondisi lingkungan.🍚",
     "ir64": "IR64 adalah varietas hasil pemuliaan yang memiliki produktivitas tinggi "
-            "dan masa panen yang relatif singkat. Varietas ini terkenal dengan biji-bijinya yang panjang dan ramping, "
-            "serta teksturnya yang cenderung lebih pera (tidak terlalu lengket) setelah dimasak.🍚",
-    "mentik": "Mentik adalah varietas lokal yang memiliki ciri khas aroma wangi dan tekstur yang sangat pulen. "
-              "Beras Mentik sering dianggap sebagai beras premium karena kualitasnya yang tinggi dan rasa khasnya yang unik. "
-              "Varietas ini umumnya ditanam di daerah tertentu dengan iklim yang sesuai, dan sering digunakan dalam hidangan "
-              "tradisional atau acara khusus.🍚"
+            "dan masa panen yang relatif singkat.🍚",
+    "mentik": "Mentik adalah varietas lokal yang memiliki ciri khas aroma wangi dan tekstur yang sangat pulen.🍚"
+}
+label_colors = {
+    'ciherang': (255, 0, 0),
+    'ir64': (0, 0, 255),
+    'mentik': (0, 255, 0),
 }
 
-# Pred funct
+# Predict function
 def import_and_predict(image_data, model):
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
-    img = np.asarray(image) / 255.0 
-    img_reshape = img[np.newaxis, ...] 
+    img = np.asarray(image) / 255.0
+    img_reshape = img[np.newaxis, ...]
     prediction = model.predict(img_reshape)
     return prediction
 
-# Show info funct
+# Show info
 def display_info(predicted_class):
     st.warning(f"{predicted_class.upper()} VARIETY")
     st.write(rice_info[predicted_class])
 
-# Vis result
-def visualize_predictions(predictions, class_names):
-    plt.figure(figsize=(8, 4))
-    plt.bar(class_names, predictions[0], color=['blue', 'orange', 'green'])
-    plt.xlabel("Classes")
-    plt.ylabel("Probability")
-    plt.title("Prediction Probabilities")
-    st.pyplot(plt)
-
-# Image sample
+# Sample images
 sample_images = {
     "Ciherang": [
         r'Images/sampel ciherang_1.png',
@@ -124,12 +116,10 @@ sample_images = {
     ]
 }
 
-# Process condition 
+# Image Selection Logic
 if img_source == "Sample image":
     st.sidebar.header("Select a class")
     selected_class = st.sidebar.selectbox("Rice Variety", list(sample_images.keys()))
-
-    # Preview
     st.header(f"Sample of {selected_class} images")
     columns = st.columns(3)
     selected_image = None
@@ -138,28 +128,19 @@ if img_source == "Sample image":
             image = Image.open(image_path)
             st.image(image, caption=f"Sample {i + 1}", use_container_width=True)
             if st.button(f"Select Sample {i + 1}", key=image_path):
-                selected_image = image_path 
+                selected_image = image_path
 
     if selected_image:
-        st.success(f"You selected: {selected_image}")
-        try:
-            image = Image.open(selected_image).convert('RGB')
-            st.image(image, caption=selected_image, use_container_width=True)
-
-            predictions = import_and_predict(image, model)
-            confidence = np.max(predictions) * 100
-            pred_class = class_names[np.argmax(predictions)]
-            label = f"Identified variety : {pred_class.upper()}"
-
-            st.sidebar.header("🔎RESULT")
-            st.sidebar.warning(label)
-            st.sidebar.info(f"Confidence score : {confidence:.2f}%")
-
-            st.markdown("### 💡Information")
-            display_info(pred_class)
-        except Exception as e:
-            st.error("Error processing the sample image.")
-            st.error(str(e))
+        image = Image.open(selected_image).convert('RGB')
+        st.image(image, caption=selected_image, use_container_width=True)
+        predictions = import_and_predict(image, model)
+        confidence = np.max(predictions) * 100
+        pred_class = class_names[np.argmax(predictions)]
+        st.sidebar.header("🔎RESULT")
+        st.sidebar.warning(f"Identified variety : {pred_class.upper()}")
+        st.sidebar.info(f"Confidence score : {confidence:.2f}%")
+        st.markdown("### 💡Information")
+        display_info(pred_class)
     else:
         st.info("Select an image for prediction")
 
@@ -170,19 +151,77 @@ else:
     else:
         try:
             image = Image.open(file).convert('RGB')
-            st.image(image, use_container_width=True)
+            st.image(image, caption="Uploaded Image", use_container_width=True)
 
-            predictions = import_and_predict(image, model)
-            confidence = np.max(predictions) * 100
-            pred_class = class_names[np.argmax(predictions)]
-            label = f"Identified variety : {pred_class.upper()}"
+            # Remove background
+            input_bytes = file.read()
+            output_bytes = remove(input_bytes)
+            img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
+            img_np = np.array(img_no_bg)
 
-            st.sidebar.header("🔎RESULT")
-            st.sidebar.warning(label)
-            st.sidebar.info(f"Confidence score : {confidence:.2f}%")
+            # Convert to grayscale
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+            _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
 
-            st.markdown("### 💡Information")
-            display_info(pred_class)
+            object_count = 0
+            for i in range(1, num_labels):
+                if stats[i, cv2.CC_STAT_AREA] >= 300:
+                    object_count += 1
+
+            if object_count <= 1:
+                # INDIVIDUAL MODE
+                predictions = import_and_predict(image, model)
+                confidence = np.max(predictions) * 100
+                pred_class = class_names[np.argmax(predictions)]
+                st.sidebar.header("🔎RESULT")
+                st.sidebar.warning(f"Identified variety : {pred_class.upper()}")
+                st.sidebar.info(f"Confidence score : {confidence:.2f}%")
+                st.markdown("### 💡Information")
+                display_info(pred_class)
+            else:
+                # MULTIPLE GRAIN MODE
+                st.info(f"Multiple grains detected: {object_count} objects")
+                draw_img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+                variety_counter = Counter()
+                count = 0
+
+                for i in range(1, num_labels):
+                    x, y, w, h, area = stats[i]
+                    cx, cy = centroids[i]
+                    if area < 300:
+                        continue
+
+                    side = int(max(w, h) * 1.5)
+                    cx_int, cy_int = int(cx)
+                    cy_int = int(cy)
+                    x1 = max(0, cx_int - side // 2)
+                    y1 = max(0, cy_int - side // 2)
+                    side = min(side, min(img_np.shape[1] - x1, img_np.shape[0] - y1))
+
+                    crop = img_np[y1:y1 + side, x1:x1 + side]
+                    resized = cv2.resize(crop, (224, 224))
+                    x_input = tf.expand_dims(resized / 255.0, axis=0)
+
+                    pred = model.predict(x_input, verbose=0)
+                    score = tf.nn.softmax(pred[0])
+                    label = class_names[np.argmax(score)]
+                    color = label_colors.get(label, (0, 255, 255))
+
+                    cv2.rectangle(draw_img, (x1, y1), (x1 + side, y1 + side), color, 2)
+                    cv2.putText(draw_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                                fontScale=0.8, color=color, thickness=2)
+
+                    variety_counter[label] += 1
+                    count += 1
+
+                st.image(cv2.cvtColor(draw_img, cv2.COLOR_BGR2RGB), caption="Classification Result", use_container_width=True)
+
+                st.sidebar.header("🔎SUMMARY")
+                for variety, total in variety_counter.items():
+                    st.sidebar.write(f"{variety.upper()}: {total} grain(s)")
+                st.sidebar.success(f"Total classified: {sum(variety_counter.values())} grain(s)")
+
         except Exception as e:
             st.error("Error processing the image. Please try again with a valid image file.")
             st.error(str(e))
