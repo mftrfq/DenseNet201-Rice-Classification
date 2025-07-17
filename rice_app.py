@@ -1,117 +1,43 @@
-import streamlit as st  
-import tensorflow as tf
-from PIL import Image, ImageOps
+import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
-import warnings
+import tensorflow as tf
+from PIL import Image
 import cv2
 from rembg import remove
 from io import BytesIO
+import os
 
-# Hide deprecation warnings
-warnings.filterwarnings("ignore")
-
-# Set page config
-st.set_page_config(
-    page_title="Rice Variety Classification",
-    page_icon="🌾",
-    initial_sidebar_state='auto'
-)
-
-# Hide footer & main menu
-hide_streamlit_style = """
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-</style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# Caching model loading
+# Load model
 @st.cache_resource
-def load_model(model_path):
-    model = tf.keras.models.load_model(model_path)
-    return model
+def load_model():
+    return tf.keras.models.load_model("densenet201_rice_model.h5")
 
-# Class name and color
-class_names = ['ciherang', 'ir64', 'mentik']
+model = load_model()
+
+# Class names and label colors
+class_names = ["Ciherang", "IR64", "Mentik Wangi"]
 label_colors = {
-    'ciherang': (255, 0, 0),
-    'ir64': (0, 0, 255),
-    'mentik': (0, 255, 0),
+    "Ciherang": (0, 255, 0),  # Green
+    "IR64": (255, 0, 0),      # Blue
+    "Mentik Wangi": (255, 255, 0)  # Cyan
 }
 
-# Sidebar content
-with st.sidebar:
-    st.title("RICE VARIETY CLASSIFICATION")
-    st.subheader("DenseNet-201")
-    st.text("Accurate Rice Variety Classifier. It helps users to easily classify rice based on images.")
-
-    # Dropdown model
-    model_options = {
-        "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
-        "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
-        "Transfer Learning E30": r'Models/TL_model_30epoch.keras',
-        "Non-Transfer Learning E10": r'Models/nonTL_model_10epoch.keras',
-        "Non-Transfer Learning E20": r'Models/nonTL_model_20epoch.keras',
-        "Non-Transfer Learning E30": r'Models/nonTL_model_30epoch.keras',
-    }
-    selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
-    model_path = model_options[selected_model]
-
-    try:
-        with st.spinner(f'Loading {selected_model}...'):
-            model = load_model(model_path)
-        st.success(f"{selected_model} selected!")
-    except Exception as e:
-        st.error(f"{selected_model} failed to load!")
-
-    # Image source
-    img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
-
-# Headline
-st.header("🌾RICE VARIETY CLASSIFICATION")
-st.write("Tahukah anda? biji padi yang kita kenal sebagai beras merupakan sumber karbohidrat utama bagi sebagian besar penduduk dunia. " \
-"Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, " \
-"ekonomi, dan ketahanan pangan banyak negara, terutama di Asia.")
-
-# Varietas info
-rice_info = {
-    "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia. "
-                "Varietas ini dikenal karena hasil panennya yang tinggi dan daya adaptasinya yang baik "
-                "terhadap berbagai kondisi lingkungan. Beras Ciherang memiliki tekstur pulen yang disukai "
-                "banyak masyarakat, serta aroma yang tidak terlalu kuat.🍚",
-    "ir64": "IR64 adalah varietas hasil pemuliaan yang memiliki produktivitas tinggi "
-            "dan masa panen yang relatif singkat. Biji-bijinya panjang dan ramping, "
-            "serta teksturnya yang cenderung pera.🍚",
-    "mentik": "Mentik adalah varietas lokal dengan aroma wangi dan tekstur sangat pulen. "
-              "Sering dianggap sebagai beras premium karena kualitas dan rasa khasnya.🍚"
+# Sample images directory
+sample_images = {
+    "Ciherang": ["samples/ciherang1.jpg", "samples/ciherang2.jpg", "samples/ciherang3.jpg"],
+    "IR64": ["samples/ir64_1.jpg", "samples/ir64_2.jpg", "samples/ir64_3.jpg"],
+    "Mentik Wangi": ["samples/mentik1.jpg", "samples/mentik2.jpg", "samples/mentik3.jpg"]
 }
 
-# Prediksi satu gambar penuh
+# Single prediction
 def import_and_predict(image_data, model):
-    size = (224, 224)
-    image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
-    img = np.asarray(image) / 255.0 
-    img_reshape = img[np.newaxis, ...] 
-    prediction = model.predict(img_reshape)
-    return prediction
+    resized_image = image_data.resize((224, 224))
+    img_array = tf.keras.preprocessing.image.img_to_array(resized_image)
+    img_array = tf.expand_dims(img_array, 0) / 255.0
+    predictions = model.predict(img_array, verbose=0)
+    return predictions[0]
 
-# Tampilkan info varietas
-def display_info(predicted_class):
-    st.warning(f"{predicted_class.upper()} VARIETY")
-    st.write(rice_info[predicted_class])
-
-# Visualisasi probabilitas prediksi
-def visualize_predictions(predictions, class_names):
-    plt.figure(figsize=(8, 4))
-    plt.bar(class_names, predictions[0], color=['blue', 'orange', 'green'])
-    plt.xlabel("Classes")
-    plt.ylabel("Probability")
-    plt.title("Prediction Probabilities")
-    st.pyplot(plt)
-
-# Deteksi dan klasifikasi tiap butir
+# Multiple grain detection and classification
 def detect_and_classify_grains(image_pil, model):
     ori_img = np.array(image_pil)
     draw_img = ori_img.copy()
@@ -125,7 +51,7 @@ def detect_and_classify_grains(image_pil, model):
     img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
     img_np = np.array(img_no_bg)
 
-    # Threshold dan segmentasi
+    # Thresholding and Connected Component
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
 
@@ -158,26 +84,22 @@ def detect_and_classify_grains(image_pil, model):
 
     return draw_img, count
 
-# Sample images
-sample_images = {
-    "Ciherang": [
-        r'Images/sampel ciherang_1.png',
-        r'Images/sampel ciherang_2.png',
-        r'Images/sampel ciherang_3.png'
-    ],
-    "IR64": [
-        r'Images/sampel ir64_1.png',
-        r'Images/sampel ir64_2.png',
-        r'Images/sampel ir64_3.png'
-    ],
-    "Mentik": [
-        r'Images/sampel mentik_1.png',
-        r'Images/sampel mentik_2.png',
-        r'Images/sampel mentik_3.png'
-    ]
-}
+# Show description
+@st.cache_data
+def display_info(label):
+    if label == "Ciherang":
+        st.markdown("Ciherang is a popular rice variety... (custom info here)")
+    elif label == "IR64":
+        st.markdown("IR64 is known for its high yield... (custom info here)")
+    elif label == "Mentik Wangi":
+        st.markdown("Mentik Wangi is an aromatic rice... (custom info here)")
 
-# Main processing
+# UI
+st.title("Rice Variety Classification using DenseNet201")
+
+img_source = st.sidebar.radio("Select Image Source", ("Sample image", "Upload image"))
+prediction_type = st.sidebar.radio("Prediction Type", ("Single Grain", "Multiple Grain"))
+
 if img_source == "Sample image":
     st.sidebar.header("Select a class")
     selected_class = st.sidebar.selectbox("Rice Variety", list(sample_images.keys()))
@@ -190,14 +112,14 @@ if img_source == "Sample image":
             image = Image.open(image_path)
             st.image(image, caption=f"Sample {i + 1}", use_container_width=True)
             if st.button(f"Select Sample {i + 1}", key=image_path):
-                selected_image = image_path 
+                selected_image = image_path
 
     if selected_image:
         st.success(f"You selected: {selected_image}")
-        try:
-            image = Image.open(selected_image).convert('RGB')
-            st.image(image, caption=selected_image, use_container_width=True)
+        image = Image.open(selected_image).convert('RGB')
+        st.image(image, caption=selected_image, use_container_width=True)
 
+        if prediction_type == "Single Grain":
             predictions = import_and_predict(image, model)
             confidence = np.max(predictions) * 100
             pred_class = class_names[np.argmax(predictions)]
@@ -210,25 +132,17 @@ if img_source == "Sample image":
             st.markdown("### 💡Information")
             display_info(pred_class)
 
-            if st.button("🔍 Run Grain Detection"):
-                draw_img, count = detect_and_classify_grains(image, model)
-                st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
-
-        except Exception as e:
-            st.error("Error processing the sample image.")
-            st.error(str(e))
-    else:
-        st.info("Select an image for prediction")
+        elif prediction_type == "Multiple Grain":
+            draw_img, count = detect_and_classify_grains(image, model)
+            st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
 
 else:
     file = st.file_uploader("Upload an image file...", type=["jpg", "png"])
-    if file is None:
-        st.text("Please upload an image file")
-    else:
-        try:
-            image = Image.open(file).convert('RGB')
-            st.image(image, use_container_width=True)
+    if file:
+        image = Image.open(file).convert('RGB')
+        st.image(image, use_container_width=True)
 
+        if prediction_type == "Single Grain":
             predictions = import_and_predict(image, model)
             confidence = np.max(predictions) * 100
             pred_class = class_names[np.argmax(predictions)]
@@ -241,10 +155,8 @@ else:
             st.markdown("### 💡Information")
             display_info(pred_class)
 
-            if st.button("🔍 Run Grain Detection"):
-                draw_img, count = detect_and_classify_grains(image, model)
-                st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
-
-        except Exception as e:
-            st.error("Error processing the image. Please try again with a valid image file.")
-            st.error(str(e))
+        elif prediction_type == "Multiple Grain":
+            draw_img, count = detect_and_classify_grains(image, model)
+            st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
+    else:
+        st.info("Please upload an image to begin.")
