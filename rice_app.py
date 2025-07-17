@@ -4,6 +4,9 @@ from PIL import Image, ImageOps
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+import cv2
+from rembg import remove
+from io import BytesIO
 
 # Hide deprecation warnings
 warnings.filterwarnings("ignore")
@@ -30,6 +33,14 @@ def load_model(model_path):
     model = tf.keras.models.load_model(model_path)
     return model
 
+# Class name and color
+class_names = ['ciherang', 'ir64', 'mentik']
+label_colors = {
+    'ciherang': (255, 0, 0),
+    'ir64': (0, 0, 255),
+    'mentik': (0, 255, 0),
+}
+
 # Sidebar content
 with st.sidebar:
     st.title("RICE VARIETY CLASSIFICATION")
@@ -55,7 +66,7 @@ with st.sidebar:
     except Exception as e:
         st.error(f"{selected_model} failed to load!")
 
-    # Image suorce
+    # Image source
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
 # Headline
@@ -64,25 +75,20 @@ st.write("Tahukah anda? biji padi yang kita kenal sebagai beras merupakan sumber
 "Beras tidak hanya menjadi makanan pokok yang menyediakan energi, tetapi juga memiliki peran penting dalam budaya, " \
 "ekonomi, dan ketahanan pangan banyak negara, terutama di Asia.")
 
-# Class name
-class_names = ['ciherang', 'ir64', 'mentik']
-
-# Varietu info
+# Varietas info
 rice_info = {
     "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia. "
                 "Varietas ini dikenal karena hasil panennya yang tinggi dan daya adaptasinya yang baik "
                 "terhadap berbagai kondisi lingkungan. Beras Ciherang memiliki tekstur pulen yang disukai "
-                "banyak masyarakat, serta aroma yang tidak terlalu kuat, menjadikannya pilihan populer untuk konsumsi sehari-hari.🍚",
+                "banyak masyarakat, serta aroma yang tidak terlalu kuat.🍚",
     "ir64": "IR64 adalah varietas hasil pemuliaan yang memiliki produktivitas tinggi "
-            "dan masa panen yang relatif singkat. Varietas ini terkenal dengan biji-bijinya yang panjang dan ramping, "
-            "serta teksturnya yang cenderung lebih pera (tidak terlalu lengket) setelah dimasak.🍚",
-    "mentik": "Mentik adalah varietas lokal yang memiliki ciri khas aroma wangi dan tekstur yang sangat pulen. "
-              "Beras Mentik sering dianggap sebagai beras premium karena kualitasnya yang tinggi dan rasa khasnya yang unik. "
-              "Varietas ini umumnya ditanam di daerah tertentu dengan iklim yang sesuai, dan sering digunakan dalam hidangan "
-              "tradisional atau acara khusus.🍚"
+            "dan masa panen yang relatif singkat. Biji-bijinya panjang dan ramping, "
+            "serta teksturnya yang cenderung pera.🍚",
+    "mentik": "Mentik adalah varietas lokal dengan aroma wangi dan tekstur sangat pulen. "
+              "Sering dianggap sebagai beras premium karena kualitas dan rasa khasnya.🍚"
 }
 
-# Pred funct
+# Prediksi satu gambar penuh
 def import_and_predict(image_data, model):
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
@@ -91,12 +97,12 @@ def import_and_predict(image_data, model):
     prediction = model.predict(img_reshape)
     return prediction
 
-# Show info funct
+# Tampilkan info varietas
 def display_info(predicted_class):
     st.warning(f"{predicted_class.upper()} VARIETY")
     st.write(rice_info[predicted_class])
 
-# Vis result
+# Visualisasi probabilitas prediksi
 def visualize_predictions(predictions, class_names):
     plt.figure(figsize=(8, 4))
     plt.bar(class_names, predictions[0], color=['blue', 'orange', 'green'])
@@ -105,7 +111,54 @@ def visualize_predictions(predictions, class_names):
     plt.title("Prediction Probabilities")
     st.pyplot(plt)
 
-# Image sample
+# Deteksi dan klasifikasi tiap butir
+def detect_and_classify_grains(image_pil, model):
+    ori_img = np.array(image_pil)
+    draw_img = ori_img.copy()
+    gray = cv2.cvtColor(ori_img, cv2.COLOR_RGB2GRAY)
+
+    # Remove background
+    with BytesIO() as f:
+        image_pil.save(f, format="PNG")
+        input_bytes = f.getvalue()
+    output_bytes = remove(input_bytes)
+    img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
+    img_np = np.array(img_no_bg)
+
+    # Threshold dan segmentasi
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
+
+    count = 0
+    for i in range(1, num_labels):
+        x, y, w, h, area = stats[i]
+        cx, cy = centroids[i]
+        if area < 300:
+            continue
+
+        side = int(max(w, h) * 1.5)
+        cx_int, cy_int = int(cx), int(cy)
+        x1 = max(0, cx_int - side // 2)
+        y1 = max(0, cy_int - side // 2)
+        side = min(side, min(img_np.shape[1] - x1, img_np.shape[0] - y1))
+        crop = img_np[y1:y1 + side, x1:x1 + side]
+
+        resized = cv2.resize(crop, (224, 224))
+        x_input = tf.expand_dims(resized / 255.0, axis=0)
+
+        pred = model.predict(x_input, verbose=0)
+        score = tf.nn.softmax(pred[0])
+        label = class_names[np.argmax(score)]
+        color = label_colors.get(label, (0, 255, 255))
+
+        cv2.rectangle(draw_img, (x1, y1), (x1 + side, y1 + side), color, 2)
+        cv2.putText(draw_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=0.8, color=color, thickness=2)
+        count += 1
+
+    return draw_img, count
+
+# Sample images
 sample_images = {
     "Ciherang": [
         r'Images/sampel ciherang_1.png',
@@ -124,12 +177,11 @@ sample_images = {
     ]
 }
 
-# Process condition 
+# Main processing
 if img_source == "Sample image":
     st.sidebar.header("Select a class")
     selected_class = st.sidebar.selectbox("Rice Variety", list(sample_images.keys()))
 
-    # Preview
     st.header(f"Sample of {selected_class} images")
     columns = st.columns(3)
     selected_image = None
@@ -157,6 +209,11 @@ if img_source == "Sample image":
 
             st.markdown("### 💡Information")
             display_info(pred_class)
+
+            if st.button("🔍 Run Grain Detection"):
+                draw_img, count = detect_and_classify_grains(image, model)
+                st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
+
         except Exception as e:
             st.error("Error processing the sample image.")
             st.error(str(e))
@@ -183,6 +240,11 @@ else:
 
             st.markdown("### 💡Information")
             display_info(pred_class)
+
+            if st.button("🔍 Run Grain Detection"):
+                draw_img, count = detect_and_classify_grains(image, model)
+                st.image(draw_img, caption=f"Total Detected: {count}", use_container_width=True)
+
         except Exception as e:
             st.error("Error processing the image. Please try again with a valid image file.")
             st.error(str(e))
