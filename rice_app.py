@@ -70,12 +70,9 @@ st.write(
 # Classes and Info
 class_names = ['ciherang', 'ir64', 'mentik']
 rice_info = {
-    "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia. "
-                "Varietas ini dikenal karena hasil panennya yang tinggi dan daya adaptasinya yang baik "
-                "terhadap berbagai kondisi lingkungan.🍚",
-    "ir64": "IR64 adalah varietas hasil pemuliaan yang memiliki produktivitas tinggi "
-            "dan masa panen yang relatif singkat.🍚",
-    "mentik": "Mentik adalah varietas lokal yang memiliki ciri khas aroma wangi dan tekstur yang sangat pulen.🍚"
+    "ciherang": "Ciherang adalah varietas unggul yang banyak ditanam di Indonesia.🍚",
+    "ir64": "IR64 adalah varietas hasil pemuliaan yang memiliki produktivitas tinggi.🍚",
+    "mentik": "Mentik adalah varietas lokal dengan aroma wangi dan tekstur pulen.🍚"
 }
 label_colors = {
     'ciherang': (255, 0, 0),
@@ -89,7 +86,7 @@ def import_and_predict(image_data, model):
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
     img = np.asarray(image) / 255.0
     img_reshape = img[np.newaxis, ...]
-    prediction = model.predict(img_reshape)
+    prediction = model.predict(img_reshape, verbose=0)
     return prediction
 
 # Show info
@@ -150,32 +147,27 @@ else:
         st.text("Please upload an image file")
     else:
         try:
-            # Step 1: read file into memory buffer
             file_bytes = file.read()
             image_buffer = BytesIO(file_bytes)
-    
-            # Step 2: display original image
             image = Image.open(image_buffer).convert('RGB')
             st.image(image, caption="Uploaded Image", use_container_width=True)
-    
-            # Step 3: remove background from fresh copy
-            rembg_buffer = BytesIO(file_bytes)  # separate buffer
+
+            rembg_buffer = BytesIO(file_bytes)
             output_bytes = remove(rembg_buffer.read())
             img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
             img_np = np.array(img_no_bg)
 
-            # Convert to grayscale
             gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
             _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
 
             object_count = 0
             for i in range(1, num_labels):
-                if stats[i, cv2.CC_STAT_AREA] >= 300:
+                area = stats[i, cv2.CC_STAT_AREA]
+                if area >= 300:
                     object_count += 1
 
             if object_count <= 1:
-                # INDIVIDUAL MODE
                 predictions = import_and_predict(image, model)
                 confidence = np.max(predictions) * 100
                 pred_class = class_names[np.argmax(predictions)]
@@ -185,20 +177,23 @@ else:
                 st.markdown("### 💡Information")
                 display_info(pred_class)
             else:
-                # MULTIPLE GRAIN MODE
                 st.info(f"Multiple grains detected: {object_count} objects")
                 draw_img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
                 variety_counter = Counter()
-                count = 0
 
                 for i in range(1, num_labels):
-                    x, y, w, h, area = stats[i]
-                    cx, cy = centroids[i]
+                    area = stats[i, cv2.CC_STAT_AREA]
                     if area < 300:
                         continue
 
+                    x = stats[i, cv2.CC_STAT_LEFT]
+                    y = stats[i, cv2.CC_STAT_TOP]
+                    w = stats[i, cv2.CC_STAT_WIDTH]
+                    h = stats[i, cv2.CC_STAT_HEIGHT]
+                    cx, cy = centroids[i]
+
                     side = int(max(w, h) * 1.5)
-                    cx_int, cy_int = int(cx)
+                    cx_int = int(cx)
                     cy_int = int(cy)
                     x1 = max(0, cx_int - side // 2)
                     y1 = max(0, cy_int - side // 2)
@@ -216,12 +211,9 @@ else:
                     cv2.rectangle(draw_img, (x1, y1), (x1 + side, y1 + side), color, 2)
                     cv2.putText(draw_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
                                 fontScale=0.8, color=color, thickness=2)
-
                     variety_counter[label] += 1
-                    count += 1
 
                 st.image(cv2.cvtColor(draw_img, cv2.COLOR_BGR2RGB), caption="Classification Result", use_container_width=True)
-
                 st.sidebar.header("🔎SUMMARY")
                 for variety, total in variety_counter.items():
                     st.sidebar.write(f"{variety.upper()}: {total} grain(s)")
