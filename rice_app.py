@@ -154,10 +154,20 @@ else:
             st.image(image, caption="Uploaded Image", use_container_width=True)
 
             # Remove background
-            input_bytes = file.read()
-            output_bytes = remove(input_bytes)
+            # input_bytes = file.read()
+            # output_bytes = remove(input_bytes)
+            # img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
+            # img_np = np.array(img_no_bg)
+            # Baca file sekali ke dalam memory
+            file_bytes = file.read()
+            image = Image.open(BytesIO(file_bytes)).convert('RGB')  # untuk ditampilkan ke user
+            st.image(image, caption="Uploaded Image", use_container_width=True)
+            
+            # Remove background menggunakan salinan
+            output_bytes = remove(file_bytes)
             img_no_bg = Image.open(BytesIO(output_bytes)).convert("RGB")
             img_np = np.array(img_no_bg)
+
 
             # Convert to grayscale
             gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
