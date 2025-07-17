@@ -8,6 +8,8 @@ import cv2
 from rembg import remove
 from io import BytesIO
 from collections import Counter
+import os
+import gdown
 
 warnings.filterwarnings("ignore")
 
@@ -27,11 +29,26 @@ footer {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Load model
+# Load model from Google Drive
 @st.cache_resource
-def load_model(model_path):
-    model = tf.keras.models.load_model(model_path)
+def load_model_from_drive(drive_id, filename):
+    if not os.path.exists(filename):
+        with st.spinner(f"Downloading {filename} from Google Drive..."):
+            url = f"https://drive.google.com/uc?id={drive_id}"
+            gdown.download(url, filename, quiet=False)
+    model = tf.keras.models.load_model(filename)
     return model
+
+# Model list with Drive IDs
+model_options = {
+    "Transfer Learning E10": ("1832Ni8JfYCZdd-Ov0_JM5ya6zBInPGxK", "TL_model_10epoch.keras"),
+    "Transfer Learning E20": ("1AbcTL20xxxxxxxxxxxxxxxxxxxxxxxx", "TL_model_20epoch.keras"),
+    "Transfer Learning E30": ("1AbcTL30xxxxxxxxxxxxxxxxxxxxxxxx", "TL_model_30epoch.keras"),
+    "Non-Transfer Learning E10": ("1AbcNonTL10xxxxxxxxxxxxxxxxxxxx", "nonTL_model_10epoch.keras"),
+    "Non-Transfer Learning E20": ("1AbcNonTL20xxxxxxxxxxxxxxxxxxxx", "nonTL_model_20epoch.keras"),
+    "Non-Transfer Learning E30": ("1AbcNonTL30xxxxxxxxxxxxxxxxxxxx", "nonTL_model_30epoch.keras"),
+}
+# Ganti ID di atas dengan ID asli file di Google Drive kamu
 
 # Sidebar
 with st.sidebar:
@@ -39,23 +56,15 @@ with st.sidebar:
     st.subheader("DenseNet-201")
     st.text("Accurate Rice Variety Classifier. It helps users to easily classify rice based on images.")
 
-    model_options = {
-        "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
-        "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
-        "Transfer Learning E30": r'Models/TL_model_30epoch.keras',
-        "Non-Transfer Learning E10": r'Models/nonTL_model_10epoch.keras',
-        "Non-Transfer Learning E20": r'Models/nonTL_model_20epoch.keras',
-        "Non-Transfer Learning E30": r'Models/nonTL_model_30epoch.keras',
-    }
     selected_model = st.selectbox("Select Classification Model", list(model_options.keys()))
-    model_path = model_options[selected_model]
+    drive_id, filename = model_options[selected_model]
 
     try:
-        with st.spinner(f'Loading {selected_model}...'):
-            model = load_model(model_path)
-        st.success(f"{selected_model} selected!")
+        model = load_model_from_drive(drive_id, filename)
+        st.success(f"{selected_model} loaded successfully!")
     except Exception as e:
-        st.error(f"{selected_model} failed to load!")
+        st.error(f"Failed to load {selected_model}")
+        st.error(str(e))
 
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
@@ -80,7 +89,7 @@ label_colors = {
     'mentik': (0, 255, 0),
 }
 
-# Predict function
+# Prediction function
 def import_and_predict(image_data, model):
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
@@ -89,7 +98,7 @@ def import_and_predict(image_data, model):
     prediction = model.predict(img_reshape, verbose=0)
     return prediction
 
-# Show info
+# Show variety info
 def display_info(predicted_class):
     st.warning(f"{predicted_class.upper()} VARIETY")
     st.write(rice_info[predicted_class])
