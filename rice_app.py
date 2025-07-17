@@ -37,8 +37,9 @@ def load_model(model_path):
 with st.sidebar:
     st.title("RICE VARIETY CLASSIFICATION")
     st.subheader("DenseNet-201")
-    st.text("Accurate Rice Variety Classifier.")
+    st.text("Accurate Rice Variety Classifier. It helps users to easily classify rice based on images.")
 
+    # Model selection
     model_options = {
         "Transfer Learning E10": r'Models/TL_model_10epoch.keras',
         "Transfer Learning E20": r'Models/TL_model_20epoch.keras',
@@ -57,10 +58,10 @@ with st.sidebar:
     except Exception as e:
         st.error(f"{selected_model} failed to load!")
 
-    # Jenis klasifikasi
+    # ✅ Tambahkan ini di sidebar
     classification_type = st.radio("Classification Type", ("Single Grain", "Multiple Grain"))
 
-    # Sumber gambar
+    # Image source (masih di sidebar)
     img_source = st.radio("Choose image source", ("Upload image", "Sample image"))
 
 # Kelas dan warna label
